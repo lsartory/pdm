@@ -1,0 +1,13 @@
+[package]
+name = "pdm"
+version = "0.1.0"
+edition = "2021"
+
+description = "Pulse Density Modulator"
+repository = "https://github.com/lsartory/pdm"
+keywords = [ "pdm", "pulse", "density", "modulator" ]
+categories = [ "algorithms", "embedded", "no-std::no-alloc", "science" ]
+readme = "README.md"
+license = "MIT"
+
+[dependencies]
