@@ -7,23 +7,28 @@
 
 #![no_std]
 #![doc = include_str!("../README.md")]
-//#![warn(missing_docs)] // TODO: doc
+#![warn(missing_docs)]
 
 /******************************************************************************/
 
 /// A trait that allow generic modulator implementations
 pub trait Modulator {
+    /// The data type used for the integrator
     type SigmaType;
 }
 
 /******************************************************************************/
 
+/// Pulse Density Modulator
+///
+/// Contains the current setpoint and integrator values
 pub struct Pdm<T: Modulator> {
     value: T,
     sigma: [T::SigmaType; 2]
 }
 
 impl<T: Modulator> Pdm<T> {
+    /// Sets the modulator value
     pub fn set_value(&mut self, value: T) {
         self.value = value
     }
@@ -38,6 +43,7 @@ macro_rules! gen_unsigned_impl {
         }
 
         impl Pdm<$T> {
+            /// Initializes a new modulator
             pub fn new() -> Self {
                 Self {
                     value: 0,
@@ -45,7 +51,8 @@ macro_rules! gen_unsigned_impl {
                 }
             }
 
-            pub fn next(&mut self) -> bool {
+            /// Returns the next output value of the modulator
+            pub fn update(&mut self) -> bool {
                 let mut sigma_new: [$S; 2] = [0; 2];
                 if self.sigma[1] >= 0 {
                     sigma_new[0] = self.sigma[0] + self.value as $S - <$T>::MAX as $S;
@@ -84,11 +91,13 @@ macro_rules! gen_signed_impl {
         }
 
         impl Pdm<$T> {
+            /// Initializes a new modulator
             pub fn new() -> Self {
                 Default::default()
             }
 
-            pub fn next(&mut self) -> bool {
+            /// Returns the next output value of the modulator
+            pub fn update(&mut self) -> bool {
                 let mut sigma_new: [$S; 2] = [0; 2];
                 if self.sigma[1] >= 0 {
                     sigma_new[0] = self.sigma[0] + self.value as $S - <$T>::MAX as $S;
@@ -127,11 +136,15 @@ macro_rules! gen_float_impl {
         }
 
         impl Pdm<$T> {
+            /// Initializes a new modulator
+            ///
+            /// Values are expected between -1.0 and 1.0
             pub fn new() -> Self {
                 Default::default()
             }
 
-            pub fn next(&mut self) -> bool {
+            /// Returns the next output value of the modulator
+            pub fn update(&mut self) -> bool {
                 let mut sigma_new: [$T; 2] = [0.0; 2];
                 if self.sigma[1] >= 0.0 {
                     sigma_new[0] = self.sigma[0] + self.value as $T - 1.0 as $T;
@@ -165,7 +178,7 @@ mod tests {
 
                 let mut avg = 0;
                 for _ in 0..$iterations {
-                    if pdm.next() {
+                    if pdm.update() {
                         avg += <$T>::MAX as u128;
                     }
                 }
@@ -188,7 +201,7 @@ mod tests {
 
                 let mut avg = 0;
                 for _ in 0..$iterations {
-                    if pdm.next() {
+                    if pdm.update() {
                         avg += <$T>::MAX as i128;
                     } else {
                         avg -= <$T>::MAX as i128;
@@ -213,7 +226,7 @@ mod tests {
 
                 let mut avg = 0.0;
                 for _ in 0..$iterations {
-                    if pdm.next() {
+                    if pdm.update() {
                         avg += 1.0;
                     } else {
                         avg -= 1.0;
