@@ -111,8 +111,44 @@ gen_signed_impl!(i8, i16);
 
 /******************************************************************************/
 
-// TODO: f32
-// TODO: f64
+macro_rules! gen_float_impl {
+    ($T: ty) => {
+        impl Modulator for $T {
+            type SigmaType = $T;
+        }
+
+        impl Default for Pdm<$T> {
+            fn default() -> Self {
+                Self {
+                    value: 0.0,
+                    sigma: [0.0; 2]
+                }
+            }
+        }
+
+        impl Pdm<$T> {
+            pub fn new() -> Self {
+                Default::default()
+            }
+
+            pub fn next(&mut self) -> bool {
+                let mut sigma_new: [$T; 2] = [0.0; 2];
+                if self.sigma[1] >= 0.0 {
+                    sigma_new[0] = self.sigma[0] + self.value as $T - 1.0 as $T;
+                    sigma_new[1] = self.sigma[1] + sigma_new[0] - 1.0 as $T;
+                } else {
+                    sigma_new[0] = self.sigma[0] + self.value as $T + 1.0 as $T;
+                    sigma_new[1] = self.sigma[1] + sigma_new[0] + 1.0 as $T;
+                }
+                self.sigma = sigma_new;
+                self.sigma[1] >= 0.0
+            }
+        }
+    };
+}
+
+gen_float_impl!(f64);
+gen_float_impl!(f32);
 
 /******************************************************************************/
 
@@ -167,4 +203,27 @@ mod tests {
     gen_signed_test!(test_i16, i16, 4_200, 500_000);
     gen_signed_test!(test_i32, i32, -420_000_000, 2_000_000);
     gen_signed_test!(test_i64, i64, 1.223e18 as i64, 2_000_000);
+
+    macro_rules! gen_float_test {
+        ($name: ident, $T: ty, $setpoint: expr, $iterations: literal) => {
+            #[test]
+            fn $name() {
+                let mut pdm = Pdm::<$T>::new();
+                pdm.set_value($setpoint);
+
+                let mut avg = 0.0;
+                for _ in 0..$iterations {
+                    if pdm.next() {
+                        avg += 1.0;
+                    } else {
+                        avg -= 1.0;
+                    }
+                }
+                let ratio = (avg / $iterations as f64) / $setpoint as f64;
+                assert!(ratio >= 0.99 && ratio <= 1.01, "ratio: {}", ratio);
+            }
+        };
+    }
+    gen_float_test!(test_f32, f32, 0.42, 500_000);
+    gen_float_test!(test_f64, f64, -0.42, 500_000);
 }
