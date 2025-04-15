@@ -41,6 +41,7 @@ loop {
 
 ## Changelog
 
-| Date       | Version | Changes         |
-|------------|---------|-----------------|
-| 2025-04-13 | 0.1.0   | Initial release |
+| Date       | Version | Changes                |
+|------------|---------|------------------------|
+| 2025-04-15 | 1.0.0   | Cleaner code structure |
+| 2025-04-13 | 0.1.0   | Initial release        |
